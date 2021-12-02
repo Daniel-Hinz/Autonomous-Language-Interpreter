@@ -25,7 +25,6 @@ pip install google-cloud-speech
 pip install google-cloud-translate 
 pip install google-cloud-texttospeech
 pipwin install pyaudio 
-
 ```
 
 So long as the user has activated their environment and installed all the required packages, the user can then navigate to the location of the 'env' folder, clone the repository, and run the following command to launch the application.
