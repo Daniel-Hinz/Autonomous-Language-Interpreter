@@ -1,19 +1,14 @@
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends "root.html" %}
 
+{% block title %}
   <title>Chart</title>
+{% endblock %}
 
-  <link rel="shortcut icon" type="image/x-icon" href="static\images\icon.ico">  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+{% block style %}
   <link rel="stylesheet" href="{{ url_for('static', filename='styles/chart.css') }}">
-  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300&amp;display=swap" rel="stylesheet">
+{% endblock %}
 
-</head>
-
-<body>
+{% block content %}
     <nav class="navbar">
         <div class="logo">ALI</div>
 
@@ -68,5 +63,4 @@
             crossorigin="anonymous">
     </script>
     <script src="static/scripts/chart.js"></script>
-</body>
-</html>
+{% endblock %}

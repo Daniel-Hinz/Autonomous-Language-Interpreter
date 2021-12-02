@@ -22,7 +22,7 @@ import pyaudio
 from six.moves import queue
 
 #set output file path to reduce amount of code manipulation
-path = r".\ALI-Output\output.mp3"   # un-comment for windows
+path = r".\\ALI-Output\\output.mp3"   # un-comment for windows
 # path = r"./ALI-Output/output.mp3" # un-comment for mac
 
 # Audio recording parameters

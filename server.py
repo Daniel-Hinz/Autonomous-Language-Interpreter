@@ -15,7 +15,7 @@ import hashlib
 import datetime
 import time
 import threading
-import toget
+import translatespeech
 import math
 import random
 
@@ -82,7 +82,7 @@ def dynamic_page():
             l1 = session.get('languageOne')
             l2 = session.get('langaugeTwo')
 
-            toget.main(languageOne, langaugeTwo) # run google APIS
+            translatespeech.main(languageOne, langaugeTwo) # run google APIS
             return render_template("home.html", isAdmin = True,
             l1 = l1, l2 = l2) if session.get("username") == "admin" else render_template("home.html", 
             isAdmin = False, l1 = l1, l2 = l2)
@@ -214,7 +214,7 @@ def getLogout():
 
 # ---------Translation page --------------
 @app.route("/takehome", methods=["GET", "POST"])
-def takeHome():
+def takehome():
     clearTextTags()
     if request.method == "POST":
         langaugeTwo = request.form["languages2"]
@@ -224,12 +224,12 @@ def takeHome():
             session["textLanguage"] = langaugeTwo
             l2 = session.get("textLanguage")
             takeHomeTranslate(langaugeTwo, text)
-            return render_template("takeHome.html", isAdmin = True, l2 = l2) if session.get("username") == "admin" else render_template("takeHome.html", isAdmin = False, l2 = l2)    
+            return render_template("takehome.html", isAdmin = True, l2 = l2) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False, l2 = l2)    
         else:
-            return render_template("takeHome.html", isAdmin = True, values = False) if session.get("username") == "admin" else render_template("takeHome.html", isAdmin = False, values = False)    
+            return render_template("takehome.html", isAdmin = True, values = False) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False, values = False)    
                  
     else:
-        return render_template("takeHome.html", isAdmin = True) if session.get("username") == "admin" else render_template("takeHome.html", isAdmin = False)
+        return render_template("takehome.html", isAdmin = True) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False)
 
 
 #------------admin create keys page--------------------
