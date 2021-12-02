@@ -10,7 +10,7 @@ The user must then setup and navigate to a folder the project to be cloned to. Y
 python3 -m pip install --user virtualenv
 python3 -m venv env
 ```
-Following this, the user must then activate the virtual environment by running the following command in the 
+Following this, the user must then activate the virtual environment by running the following command in the env folder:
 ```env\Scripts\activate```
 
 Finally the user must run the following pip commands:
