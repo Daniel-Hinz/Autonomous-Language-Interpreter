@@ -3,7 +3,9 @@ A.L.I. was developed as a tool for use in hospitals to help overcome language ba
 
 ## Installation
 A.L.I requires several installations before it is accessable to the user. The easiest way to do this is to install pip which can be done by running the command:
-```python3 -m pip install --user --upgrade pip```
+```
+python3 -m pip install --user --upgrade pip
+```
 
 The user must then setup and navigate to a folder the project to be cloned to. You then must setup a local environment to install the proper packages by running:
 ```
