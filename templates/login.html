@@ -11,13 +11,16 @@
 {% block content %}
   <form action="/" method="post">
     <div class="main-wrapper">
-      <div class="small bubble"></div>
-      <div class="large bubble"></div>
-      <img src="static\images\logo.png" alt="logo">
-      <i class="fas fa-user"></i>
+      <nav class="navbar">
+        <div class="logo">ALI</div>
+      </nav>
+
+      <div class="i-wrapper" style="display: flex; justify-content: center; align-items: center;">
+        <i class="fas fa-user"></i>
+      </div>
 
       {% if failedLogin %}
-      <p style="color: red">Failed login</p>
+      <p class="error">Failed login</p>
       {% endif %}
 
       <input type="text" placeholder="Username" name="username" class="text">

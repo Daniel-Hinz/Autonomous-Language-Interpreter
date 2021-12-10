@@ -8,35 +8,14 @@
     margin: 50px 0;
 }
 
-.small {
-    background: var(--orange-1);
-    height: 375px;
-    width: 375px;
-    bottom: -275px;
-    left: -75px;
-    z-index: -1;
-}
-
-.large {
-    background: var(--blue-1);
-    height: 550px;
-    width: 550px;
-    bottom: -500px;
-    right: -150px;
-    z-index: -1;
-}
-
-.bubble {
+.i-wrapper {
+    background: var(--blue-4);
+    color: var(--white-1);
+    font-size: 175px;
+    height: 275px;
+    width: 275px;
     border-radius: 50%;
-    position: absolute;
-    overflow: hidden;
-}
-
-i {
-    color: var(--grey-1);
-    font-size: 120px;
-    border-radius: 50%;
-    padding: 15px;
+    margin-bottom: 50px;
 }
 
 .text {
@@ -52,16 +31,17 @@ i {
 .button {
   padding: 10px 45px;
   margin-top: 40px;
-  background: var(--blue-1);
+  background: var(--blue-2);
   border: none;
   border-radius: 15px;
   color: white;
   cursor: pointer;
   margin-bottom: 50px;
+  transition: .2s;
 }
 
 .button:hover {
-    background: var(--green-1);
+    background: var(--blue-3);
 }
 
 p a {
@@ -72,20 +52,4 @@ p a {
 
 p a:hover {
     text-decoration: underline;
-}
-
-@media screen and (min-width: 624px) {
-    .bubble {
-        display: none;
-    }
-
-    body {
-        background: var(--white-2)
-    }
-
-    .main-wrapper {
-        background: var(--white-1);
-        width: 500px;
-        height: 92.5vh;
-    }
 }

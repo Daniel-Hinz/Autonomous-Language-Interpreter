@@ -59,7 +59,7 @@ textarea, textarea:focus {
 
 input {
     padding: 10px 50px;
-
+    transition: .2s;
 }
 
 input:hover {

@@ -1,32 +1,23 @@
-# ALI server file
-# Flask imports
-from flask import render_template
-from flask import request
-from flask import redirect
-from flask import session
-from flask import Response
-
-from database import companies, saveUser, getUser, chart_table,isAdmin, db
-from database import generateCredentials, stringToBytes, companyIdGenerator, saveCompany
-from sessions import app
-from translatetext import takeHomeTranslate, clearTextTags,clearHomeTags
+from flask     import render_template, request, redirect, session, Response
+from database  import companies, saveUser, getUser, chart_table,isAdmin, db
+from database  import generateCredentials, stringToBytes, companyIdGenerator, saveCompany
+from translate import takeHomeTranslate, clearTextTags, clearHomeTags
+from sessions  import app
 
 import hashlib
 import datetime
 import time
 import threading
-import translatespeech
 import math
 import random
+import translate
 
-
-
-# ----------------home page--------------------
+#################################################################
+# Home Page Route
 @app.route("/home", methods=["GET", "POST"])
 def homePage():
     
     if request.method == 'POST':
-        #getting from forms
         patientName = request.form["name"]
         userNotes = request.form["notes"]
         highlights = request.form["highlights"]
@@ -35,8 +26,9 @@ def homePage():
         time = dateAndTime[11:19]
         username = session.get("username")
         
+        # Insert user data into the database
         try:
-            chart_table.insert({ # insert to chart
+            chart_table.insert({ 
                 'username': username,
                 'patient': patientName,
                 'time' : time,
@@ -46,9 +38,11 @@ def homePage():
                 'highlights': highlights
             })
             
-        except Exception as e: # throw 409 error if exception occurs 
+        # Throw 409 error if exception occurs
+        except Exception as e:  
             return Response(e, status=409)
         
+        # Redirect to the Homepage
         if session.get("username")  == "admin":
             return render_template("home.html", isAdmin = True)
 
@@ -56,9 +50,9 @@ def homePage():
             return redirect("/")
         else:
             return render_template("home.html", isAdmin = False)
-        
-    else:
 
+    # Default Home Page Route   
+    else:
         if session.get("username") == "admin":
             return render_template("home.html", isAdmin = True)
 
@@ -68,13 +62,15 @@ def homePage():
             return render_template("home.html", isAdmin = False)
 
 
-# -------------------translate---------------------------------
+#################################################################
+# Translation Route
 @app.route("/translate", methods=["GET", "POST"])
 def dynamic_page():
     if request.method == "POST":
-        #getting language input from page
+
         languageOne = request.form["languages1"]
         langaugeTwo = request.form["languages2"]
+
         if languageOne and langaugeTwo:
             session['languageOne'] = languageOne
             session['langaugeTwo'] = langaugeTwo
@@ -82,137 +78,122 @@ def dynamic_page():
             l1 = session.get('languageOne')
             l2 = session.get('langaugeTwo')
 
-            translatespeech.main(languageOne, langaugeTwo) # run google APIS
-            return render_template("home.html", isAdmin = True,
-            l1 = l1, l2 = l2) if session.get("username") == "admin" else render_template("home.html", 
-            isAdmin = False, l1 = l1, l2 = l2)
+            translate.main(languageOne, langaugeTwo) 
+            return render_template("home.html", isAdmin = True) if session.get("username") == "admin" else render_template("home.html", isAdmin = False)
 
         else:
-            return render_template("home.html", isAdmin = True, 
-            values = False) if session.get("username") == "admin" else render_template("home.html", 
-            isAdmin = False, values=False)
+            return render_template("home.html", isAdmin = True, values = False) if session.get("username") == "admin" else render_template("home.html", isAdmin = False, values=False)
 
     else:
         return render_template("home.html", isAdmin == True) if session.get("username") == "admin" else render_template("home.html", isAdmin = False)
     
 
-# -------------------login page functionality--------------------
+#################################################################
+# Login Page Route
 @app.route("/", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
 def loginPage():
 
+    # Handle login form
     if request.method == "POST":
-        # this will grab user input from html page
         username = request.form["username"]
         password = request.form["password"]
+        user = getUser(username)
 
-        user = getUser(username) #type dict
-
-        if not user:
-            return render_template(
-                "login.html", failedLogin=True
-            )  # if user not found, will redirect user back to login page
-        if not verifyPassword(password, user["password"]):
-            return render_template(
-                "login.html", failedLogin=True
-            )  # if password is wrong, will redirect to login page
+        # Verify user account
+        if not user or not verifyPassword(password, user["password"]):
+            return render_template("login.html", failedLogin=True)
+        
+        # Create session
         if username not in session:
-            session["username"] = username  # adds username to session
+            session["username"] = username 
 
+            # Redirect to home
             if(isAdmin(username)):
-                 print("ADMIN FOUND")  ## checks if user is admin
-                 return render_template("home.html",isAdmin = True)  # will redirect to home page with the user being logged in
+                 return render_template("home.html", isAdmin = True)  
             else:
-                 return render_template("home.html",isAdmin = False)  
+                 return render_template("home.html", isAdmin = False) 
 
-
-
+    # Default Login Route 
     else:
         return render_template("login.html", failedLogin=False)
 
 
-# ---------------sign up functionality ----------------
+#################################################################
+# Signup Page Route
 @app.route("/signup", methods=["GET", "POST"])
 def signUpPage():
     
     if request.method == "POST":
         companyKey = request.form["companyKey"]
-        username = request.form["username"]  # get username form page
-        print("Getting password")
-        password = request.form["password"]  # get password from page
-        print(f"password is: {password}")
-        passwordRepeat = request.form["password_again"]  # get password from page
+        username = request.form["username"]  
+        password = request.form["password"]  
+        passwordRepeat = request.form["password_again"]  
 
         # checking to see if username is already taken
         oldUser = getUser(username)
         oldName = str(oldUser["username"])
 
         if oldName.upper() == username.upper():
-            # username has been taken
-            return render_template(
-                "signup.html",
+            return render_template("signup.html",
                 invalidCode=False,
                 notPasswordMatch=False,
                 badUsername=True,
             )
 
-        if (
-            password != passwordRepeat
-        ):  # makes sure the double password input is the same
+        # Verify passwords match
+        if (password != passwordRepeat):  
             if "username" not in session:
-                session["username"] = username  ## saves the session using flask
-                return render_template(
-                    "signup.html",
+                session["username"] = username  
+
+                return render_template("signup.html",
                     invalidCode=False,
                     notPasswordMatch=True,
                     badUsername=False,
-                )  # will redirct to signup page if not the same
+                ) 
 
         companyInfo = list(companies.find(company_key=companyKey))
+
+        # Check if company code exists
         try:
             companyName = companyInfo[0].get("company_name")
         except:
-            # need to return error code rather than redirect
-            return render_template(
-                "signup.html",
+            return render_template("signup.html",
                 invalidCode=True,
                 notPasswordMatch=False,
                 badUsername=False,
-            )  # input message (bootstrap alert) that says company key wrong
+            ) 
 
-        data = {  # saves user after signup
+        data = {  
             "username": username,
             "password": generateCredentials(password),
-            "company_name": companyName,  # change to company name
-        } # data is type dict
-        print(type(data))
+            "company_name": companyName,  
+        } 
 
-        
+        # Save the users data
         saveUser(data)
       
+        # Redirect to the homepage
         if "username" not in session:
-            session["username"] = username  
-            # sets session user name to the new users name
+            session["username"] = username              
         return redirect("/")
+
+    # Default Signup Route
     else:
-        return render_template(
-            "signup.html", invalidCode=False, notPasswordMatch=False, badUsername=False
-        )
+        return render_template("signup.html", invalidCode=False, notPasswordMatch=False, badUsername=False)
 
 
-
-# --------------sign out function & route-----------------------
+#################################################################
+# Logout Page Route
 @app.route("/logout", methods=["GET"])
 def getLogout():
     clearHomeTags()
-    session.pop(
-        "username", None
-    )  # removes the user id from the session when they logout
-    return redirect("/")  # redirect to login page
+    session.pop("username", None)
+    return redirect("/")  
 
 
-
-# ---------Translation page --------------
+#################################################################
+# Signup Page Route
 @app.route("/takehome", methods=["GET", "POST"])
 def takehome():
     clearTextTags()
@@ -232,92 +213,91 @@ def takehome():
         return render_template("takehome.html", isAdmin = True) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False)
 
 
-#------------admin create keys page--------------------
+#################################################################
+# Admin Page Route
 @app.route("/admin", methods=["GET", "POST"])
 def getAdmin():
     if request.method == 'POST':
-        #getting from form
+
         username = request.form["username"]
         password = request.form["password"]
         companyName = request.form["companyName"]
         companyID = request.form["companyID"]
+        user = getUser(username) 
 
-        user = getUser(username) #getting user name
-
-        if username != "admin": # checking for admin 
+        # Verify user account is an admin one
+        if username != "admin": 
             return render_template("admin.html", failedLogin = True, isAdmin = True, keyMade = False)
         if not verifyPassword(password, user["password"]):
             return render_template("admin.html", failedLogin = True, isAdmin = True, keyMade = False)
 
-        key = generateKey(20) # generate company key
-        
-        if(companyID == ""): #if no ID inputted, use the compnayIDGenerator function
+        # Generate key and id 
+        key = generateKey(20) 
+        if(companyID == ""): 
             companyID = companyIdGenerator()
         
-        data = { # create dict 
+        data = { 
             "company_id": companyID,
             "company_name": companyName,
             "company_key": key,
         }
         
-        saveCompany(data) #save data
+        saveCompany(data) 
         return render_template("admin.html", failedLogin = False, isAdmin = True, keyMade = True, key = key)   
     else:
         return render_template("admin.html", failedLogin = False, isAdmin = True, keyMade = False)
 
 
-
-# -------chart Page -----------------
+#################################################################
+# Chart Page Route
 @app.route("/mychart")
 def getChart():
-    username = session.get("username") # get username from session
+    username = session.get("username") 
+
     itemsInChart = chart_table.find()
-    itemsInChart = [ dict(x) for x in list(itemsInChart) if x['username'] == username ] #find data from username
+    itemsInChart = [ dict(x) for x in list(itemsInChart) if x['username'] == username ] 
+
     if session.get("username") == "admin": # admin check
-        return render_template("chart.html", itemsInChart = itemsInChart,isAdmin = True)
+        return render_template("chart.html", itemsInChart = itemsInChart, isAdmin = True)
     else:
-       return render_template("chart.html", itemsInChart = itemsInChart,isAdmin = False) #return items found on template
+       return render_template("chart.html", itemsInChart = itemsInChart, isAdmin = False) 
 
 
-
-
-# passwords need to be verified. We need to hash and compare to see if its verifiable
+#################################################################
+# Veryify password matches a users username
 def verifyPassword(Userpassword, Usercredentials):
     
+    # Hash and Salt the password variables
     if type(Usercredentials) == str:
         salt = stringToBytes(Usercredentials[10:74])
         key = stringToBytes(Usercredentials[85:149])
     else:
-        salt = stringToBytes(Usercredentials["salt"])  # get salt
-        key = stringToBytes(Usercredentials["key"])  # get key
+        salt = stringToBytes(Usercredentials["salt"]) 
+        key = stringToBytes(Usercredentials["key"])  
 
-    newKey = hashlib.pbkdf2_hmac(  # process to hash the password to compare
-        "sha256",  # The hash digest algorithm for HMAC
-        Userpassword.encode("utf-8"),  # Convert the password to bytes
-        salt,  # Provide the salt
-        100000,  # It is recommended to use at least 100,000 iterations of SHA-256
-    )
-    return newKey == key  # returns bool to see if they match
+    newKey = hashlib.pbkdf2_hmac("sha256", Userpassword.encode("utf-8"), salt, 100000)
+    return newKey == key 
 
-##runs in the backgroud and deletes records that are 24 hours old
+
+#################################################################
+# Runs in the backgroud and deletes records that are 24 hours old
 def background():
     minutes = 0
  
     while True:
+        if minutes > 60:
+            try:
+                db.query('DELETE FROM chart_table WHERE time_stamp<=DATE_SUB(NOW(), INTERVAL 1 DAY);') #query to find old chart data(24 hours)
+                db.commit()
+                minutes = 0
+
+            except: pass
+        time.sleep(60)
+        minutes = minutes + 1
 
 
-            if minutes > 60:
-                try:
-                    db.query('DELETE FROM chart_table WHERE time_stamp<=DATE_SUB(NOW(), INTERVAL 1 DAY);') #query to find old chart data(24 hours)
-                    db.commit()
-                    minutes = 0
-
-
-                except: pass
-            time.sleep(60)
-            minutes = minutes + 1
-    
-
+#################################################################
+# Generate Company Key
 def generateKey(length): #function to generate company key
     result           = ''
     characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -326,14 +306,15 @@ def generateKey(length): #function to generate company key
       result += characters[math.floor(random.randint(0, len(characters)-1))]
       
     return result
-   
 
+
+#################################################################
+# Main driver code
 if __name__ == "__main__":
- 
     b = threading.Thread(name='background', target=background) #thread for deleting old chart data
-
     b.daemon = True
     b.start()
+
     app.run(host="localhost", port=8080, debug=True)
 
 

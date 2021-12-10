@@ -1,94 +1,82 @@
-from __future__ import division
+from __future__   import division
+from playsound    import playsound
+from six.moves    import queue
+from bs4          import BeautifulSoup
+from google.cloud import speech
+from google.cloud import translate_v2 as translate
+from google.cloud import texttospeech
+from google.cloud import texttospeech_v1
 
+import keyboard
+import pyaudio
 import os
 import re
 import sys
 import pandas as pd
 
-from google.cloud import speech
-from google.cloud import translate_v2 as translate
-from google.cloud import texttospeech # outdated or incomplete comparing to v1
-from google.cloud import texttospeech_v1
-from playsound import playsound #play mp3 files
-from bs4 import BeautifulSoup
-import keyboard
 
-#-----------------------credential[path] ensure that it is set to proper location -------------------------------
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r".\\ServiceKey.json"    # un-comment for windows
-# os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r"./ServiceKey.json"   # un-comment for mac
-#------------------------------------------------^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^----
+# Get service key and set path for audio file
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r".\\ServiceKey.json"   
+path = r".\\ALI-Output\\output.mp3" 
 
-import pyaudio
-from six.moves import queue
+# Global audio recording parameters
+RATE = 24000 
+CHUNK = int(RATE / 10)  
 
-#set output file path to reduce amount of code manipulation
-path = r".\\ALI-Output\\output.mp3"   # un-comment for windows
-# path = r"./ALI-Output/output.mp3" # un-comment for mac
-
-# Audio recording parameters
-RATE = 24000 #decent speed for audible speaking
-CHUNK = int(RATE / 10)  # 100ms
-
-# instantiate clients for translate and T2S
+# Instantiate clients for translate and T2S
 translate_client = translate.Client()
 client = texttospeech_v1.TextToSpeechClient()
 
+
+#################################################################################
+# Class to provide speech translation 
 class MicrophoneStream(object):
     """Opens a recording stream as a generator yielding the audio chunks."""
 
+    # Create a thread safe audio buffer
     def __init__(self, rate, chunk):
         self._rate = rate
         self._chunk = chunk
-
-        # Create a thread-safe buffer of audio data
         self._buff = queue.Queue()
         self.closed = True
 
+    # Run the audio stream asynchronously to fill the buffer object.
     def __enter__(self):
         self._audio_interface = pyaudio.PyAudio()
         self._audio_stream = self._audio_interface.open(
             format=pyaudio.paInt16,
-            # The API currently only supports 1-channel (mono) audio
-            # https://goo.gl/z757pE
             channels=1,
             rate=self._rate,
             input=True,
             frames_per_buffer=self._chunk,
-            # Run the audio stream asynchronously to fill the buffer object.
-            # This is necessary so that the input device's buffer doesn't
-            # overflow while the calling thread makes network requests, etc.
             stream_callback=self._fill_buffer,
         )
 
         self.closed = False
-
         return self
 
+    # Signal the generator to terminate
     def __exit__(self, type, value, traceback):
         self._audio_stream.stop_stream()
         self._audio_stream.close()
         self.closed = True
-        # Signal the generator to terminate so that the client's
-        # streaming_recognize method will not block the process termination.
         self._buff.put(None)
         self._audio_interface.terminate()
 
+    # Fill the buffer
     def _fill_buffer(self, in_data, frame_count, time_info, status_flags):
         """Continuously collect data from the audio stream, into the buffer."""
         self._buff.put(in_data)
         return None, pyaudio.paContinue
 
+    # Ensure there's at least one chunk of data and stop iteration otherwise
     def generator(self):
         while not self.closed:
-            # Use a blocking get() to ensure there's at least one chunk of
-            # data, and stop iteration if the chunk is None, indicating the
-            # end of the audio stream.
             chunk = self._buff.get()
             if chunk is None:
                 return
             data = [chunk]
 
-            # Now consume whatever other data's still buffered.
             while True:
                 try:
                     chunk = self._buff.get(block=False)
@@ -100,13 +88,14 @@ class MicrophoneStream(object):
 
             yield b"".join(data)
 
-def listen_print_loop(responses, var1, var2):
 
+##########################################################################
+## Speech Translation function
+def listen_print_loop(responses, var1, var2):
     with open('templates/home.html', 'rb') as file: 
         soup = BeautifulSoup(file.read(), "lxml") 
         soup.find("textarea", {"id": "t1"}).clear()
         soup.find("textarea", {"id": "t2"}).clear()
-
         file.close()
     
     savechanges = soup.prettify("utf-8")
@@ -119,9 +108,6 @@ def listen_print_loop(responses, var1, var2):
         if not response.results:
             continue
 
-        # The `results` list is consecutive. For streaming, we only care about
-        # the first result being considered, since once it's `is_final`, it
-        # moves on to considering the next utterance.
         result = response.results[0]
         if not result.alternatives:
             continue
@@ -129,17 +115,12 @@ def listen_print_loop(responses, var1, var2):
         # Display the transcription of the top alternative.
         transcript = result.alternatives[0].transcript
 
-        # Display interim results, but with a carriage return at the end of the
-        # line, so subsequent lines will overwrite them.
-        #
-        # If the previous result was longer than this one, we need to print
-        # some extra spaces to overwrite the previous result
+        # Display interim results
         overwrite_chars = " " * (num_chars_printed - len(transcript))
 
         if not result.is_final:
             sys.stdout.write(transcript + overwrite_chars + "\r")
             sys.stdout.flush()
-
             num_chars_printed = len(transcript)
 
         else:
@@ -168,19 +149,17 @@ def listen_print_loop(responses, var1, var2):
             # Set the text input to be synthesized
             quote = output['translatedText']
             synthesis_input = texttospeech_v1.SynthesisInput(text=quote)
-
             voice = texttospeech_v1.VoiceSelectionParams(
                 language_code=var2, ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
             )
 
+            # Set the voice/accent the output speaks in
             voice = texttospeech_v1.VoiceSelectionParams(
                 name='en-US-Standard-A,en-US,1,15000', language_code=var2
-                # name='vi-VN-Wavenet-D', language_code="vi-VN" example
             )
 
             # Select the type of audio file you want returned
             audio_config = texttospeech_v1.AudioConfig(
-                # https://cloud.google.com/text-to-speech/docs/reference/rpc/google.cloud.texttospeech.v1#audioencoding
                 audio_encoding=texttospeech_v1.AudioEncoding.MP3
             )
 
@@ -189,18 +168,19 @@ def listen_print_loop(responses, var1, var2):
                 input=synthesis_input, voice=voice, audio_config=audio_config
             )
         
-            # The response's audio_content is binary.
+            # The response's audio_content is binary
             with open(path, "wb") as out:
-                # Write the response to the output file.
+
+                # Write the response to the output file
                 out.write(response.audio_content)
                 print('Audio content written to file "output.mp3"')
                 out.close()
             
-            playsound(path) #play the output.mp3 file
-            os.remove(path) #remove the output.mp3 file
+            # Play and remove the audio file
+            playsound(path) 
+            os.remove(path) 
         
-            # Exit recognition if any of the transcribed phrases could be
-            # one of our keywords.
+            # Terminate loop if user says stop in any language
             if re.search(r"\b(stop|exit|dejar|parada|توقف|停止|arrêter|quitter|halt|विराम|止まる|멈추다|zatrzymać|Pare|Parar|останавливаться|ఆపు|ఆపండి|Dur|ngừng lại|thôi)\b", transcript, re.I):
                 print("Exiting..")
                 break
@@ -209,11 +189,12 @@ def listen_print_loop(responses, var1, var2):
                 break
 
             num_chars_printed = 0
-           
-def main(var1, var2):
-    # See http://g.co/cloud/speech/docs/languages for a list of supported languages.
 
-    open(path, "a") #create a new instance of the audio output file as main is ran
+
+#################################################################################
+# Main driver function to provide speech translation       
+def main(var1, var2):
+    open(path, "a")
 
     client = speech.SpeechClient()
     config = speech.RecognitionConfig(
@@ -235,9 +216,50 @@ def main(var1, var2):
         )
 
         responses = client.streaming_recognize(streaming_config, requests)
-        # Now, put the transcription responses to use.
         listen_print_loop(responses, var1, var2)
 
+
+#################################################################################
+# Main driver function to provide text translation   
+def takeHomeTranslate(var1, text):
+    with open('templates/takeHome.html', 'rb') as file:
+        soup = BeautifulSoup(file.read(), "lxml") 
+        output = translate_client.translate(text, target_language=var1)
+        soup.find("textarea", {"id": "t1"}).append(text)
+        soup.find("textarea", {"id": "t2"}).append(output['translatedText'])
+        file.close()
+        
+
+    savechanges = soup.prettify("utf-8")
+    with open("templates/takeHome.html", "wb") as file:
+        file.write(savechanges)
+        file.close()
+
+# clears textarea in takehome.html page
+def clearTextTags(): 
+    with open('templates/takeHome.html', 'rb') as file:
+        soup = BeautifulSoup(file.read(), "lxml") 
+        soup.find("textarea", {"id": "t1"}).clear()
+        soup.find("textarea", {"id": "t2"}).clear()
+        file.close()
+
+    savechanges = soup.prettify("utf-8")
+    with open("templates/takeHome.html", "wb") as file:
+        file.write(savechanges)
+        file.close()
+
+# clears text area in home.html
+def clearHomeTags(): 
+    with open('templates/home.html', 'rb') as file:
+        soup = BeautifulSoup(file.read(), "lxml") 
+        soup.find("textarea", {"id": "t1"}).clear()
+        soup.find("textarea", {"id": "t2"}).clear()
+        file.close()
+
+    savechanges = soup.prettify("utf-8")
+    with open("templates/home.html", "wb") as file:
+        file.write(savechanges)
+        file.close()
 
 if __name__ == "__main__":
     main()

@@ -42,7 +42,7 @@
     width: 250px;
     margin: 5px;
     padding: 10px;
-    outline: 1px solid black;
+    outline: 1px solid var(--blue-2);
     border-radius: 2px;
     resize: none;
 }
@@ -71,7 +71,7 @@
     justify-content: center;
     align-items: center;
     border-radius: 50%;
-    outline: 5px solid var(--blue-1);
+    background: var(--blue-4);
     cursor: pointer;
     margin-top: 40px;
     position: relative;
@@ -110,7 +110,7 @@
 
 .fa-microphone {
     font-size: 225px;
-    color: var(--orange-1);
+    color: var(--white-1);
 }
 
 .fa-chevron-right {
@@ -129,7 +129,7 @@ form {
 
 h2 {
     margin-top: 40px;
-    color: var(--grey-1);
+    color: var(--blue-1);
 }
 
 select {
@@ -171,7 +171,7 @@ select:focus {
 }
 
 .fa-highlighter {
-    color: var(--grey-1);
+    color: var(--blue-3);
     font-size: 30px;
     margin: 10px;
     position: absolute;

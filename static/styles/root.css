@@ -1,6 +1,8 @@
 :root {
-    --blue-1: #9cbcd4;
-    --blue-2: #ccdbe3;
+    --blue-1: #25252e;
+    --blue-2: #2b2d36;
+    --blue-3: #7b8eb0;
+    --blue-4: #92A8D1;
     --opal-1: #d6bea1;
     --opal-2: #dcb385;
     --grey-1: #6c6c74;
@@ -9,6 +11,8 @@
     --orange-2: #e3a55d;
     --white-1: #ffffff;
     --white-2: #f5f5f5;
+    --red-1: #ba4946;  
+    --red-2: #f7dfdf;
 }
 
 * {
@@ -18,7 +22,7 @@
 }
 
 body {
-    background: var(--white-2);
+    background: var(--white-1);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -37,7 +41,7 @@ body {
     align-items: center;
     position: absolute;
     top: 0;
-    border-bottom: 5px solid var(--orange-2);
+    border-bottom: 5px solid var(--blue-4);
 }
 
 .logo {
@@ -137,4 +141,16 @@ body {
     display: flex;
     justify-content: flex-end;
     align-items: center;
+}
+
+.error {
+    background: var(--red-2);
+    color: var(--red-1);
+    outline: 1px solid var(--red-1);
+    margin: 5px;
+    padding: 5px 10px;
+    width: 200px;
+    border-radius: 5px;
+    margin-bottom: 5px;
+    text-align: center;
 }

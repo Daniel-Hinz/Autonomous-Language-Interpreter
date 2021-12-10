@@ -11,29 +11,28 @@
 {% block content %}
   <form action="/signup" method="post"> 
     <div class="main-wrapper">
-      <div class="small bubble"></div>
-      <div class="large bubble"></div>
-
-      <i class="fas fa-users-cog"></i>
+      <div class="i-wrapper" style="display: flex; justify-content: center; align-items: center;">
+        <i class="fas fa-users-cog"></i>
+      </div>
       
-      <p>Sign up here with your company key.</p>
+      <p style="padding-bottom: 20px;">Sign up here with your company key.</p>
+      
+      {% if invalidCode %}
+        <p class="error">Wrong Key</p>
+      {% endif %}
+    
+      {% if notPasswordMatch %} 
+        <p class="error">Password not matched</p>
+      {% endif %}
+
+      {% if badUsername %} 
+        <p class="error">Username already taken</p>
+      {% endif %}
+      
       <input type="text" placeholder = "Company Key" name="companyKey" class="text" >
       <input type="text" placeholder="Create Username" name="username" class="text" > 
       <input type="password" placeholder="Create Password" name="password" class="text">
       <input type="password" placeholder="Repeat Password" name="password_again" class="text"> 
-
-      {% if invalidCode %}
-        <p style="color: red; padding-top: 20px;">Wrong Key</p>
-      {% endif %}
-      
-      {% if notPasswordMatch %} 
-        <p style="color: red; padding-top: 20px;">Password not matched</p>
-      {% endif %}
-
-      {% if badUsername %} 
-        <p style="color: red; padding-top: 20px;">Username already taken</p>
-      {% endif %}
-
       <input type="submit" value="Create User Account" class="button">
     </div>
   </form>
