@@ -14,7 +14,6 @@ import re
 import sys
 import pandas as pd
 
-
 # Get service key and set path for audio file
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r".\\ServiceKey.json"   
 path = r".\\ALI-Output\\output.mp3" 
@@ -124,14 +123,10 @@ def listen_print_loop(responses, var1, var2):
             num_chars_printed = len(transcript)
 
         else:
-            print(transcript + overwrite_chars)
-
             text = (transcript)
             target = var2
 
             output = translate_client.translate(text, target_language=target)
-            print(output['translatedText'])
-            speechString = output['translatedText']
             
             #print input and output
             with open('templates/home.html', 'rb') as file: 
@@ -193,7 +188,7 @@ def listen_print_loop(responses, var1, var2):
 
 #################################################################################
 # Main driver function to provide speech translation       
-def main(var1, var2):
+def translateSpeech(var1, var2):
     open(path, "a")
 
     client = speech.SpeechClient()
@@ -218,48 +213,6 @@ def main(var1, var2):
         responses = client.streaming_recognize(streaming_config, requests)
         listen_print_loop(responses, var1, var2)
 
-
-#################################################################################
-# Main driver function to provide text translation   
-def takeHomeTranslate(var1, text):
-    with open('templates/takeHome.html', 'rb') as file:
-        soup = BeautifulSoup(file.read(), "lxml") 
-        output = translate_client.translate(text, target_language=var1)
-        soup.find("textarea", {"id": "t1"}).append(text)
-        soup.find("textarea", {"id": "t2"}).append(output['translatedText'])
-        file.close()
-        
-
-    savechanges = soup.prettify("utf-8")
-    with open("templates/takeHome.html", "wb") as file:
-        file.write(savechanges)
-        file.close()
-
-# clears textarea in takehome.html page
-def clearTextTags(): 
-    with open('templates/takeHome.html', 'rb') as file:
-        soup = BeautifulSoup(file.read(), "lxml") 
-        soup.find("textarea", {"id": "t1"}).clear()
-        soup.find("textarea", {"id": "t2"}).clear()
-        file.close()
-
-    savechanges = soup.prettify("utf-8")
-    with open("templates/takeHome.html", "wb") as file:
-        file.write(savechanges)
-        file.close()
-
-# clears text area in home.html
-def clearHomeTags(): 
-    with open('templates/home.html', 'rb') as file:
-        soup = BeautifulSoup(file.read(), "lxml") 
-        soup.find("textarea", {"id": "t1"}).clear()
-        soup.find("textarea", {"id": "t2"}).clear()
-        file.close()
-
-    savechanges = soup.prettify("utf-8")
-    with open("templates/home.html", "wb") as file:
-        file.write(savechanges)
-        file.close()
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,9 @@
-from flask     import render_template, request, redirect, session, Response
-from database  import companies, saveUser, getUser, chart_table,isAdmin, db
-from database  import generateCredentials, stringToBytes, companyIdGenerator, saveCompany
-from translate import takeHomeTranslate, clearTextTags, clearHomeTags
-from sessions  import app
+from flask               import render_template, request, redirect, session, Response
+from database            import companies, saveUser, getUser, chart_table,isAdmin, db
+from database            import generateCredentials, stringToBytes, companyIdGenerator, saveCompany
+from translations.text   import translateText, clearTextTags, clearHomeTags
+from translations.speech import translateSpeech
+from sessions            import app
 
 import hashlib
 import datetime
@@ -10,7 +11,6 @@ import time
 import threading
 import math
 import random
-import translate
 
 #################################################################
 # Home Page Route
@@ -72,13 +72,7 @@ def dynamic_page():
         langaugeTwo = request.form["languages2"]
 
         if languageOne and langaugeTwo:
-            session['languageOne'] = languageOne
-            session['langaugeTwo'] = langaugeTwo
-
-            l1 = session.get('languageOne')
-            l2 = session.get('langaugeTwo')
-
-            translate.main(languageOne, langaugeTwo) 
+            translateSpeech(languageOne, langaugeTwo) 
             return render_template("home.html", isAdmin = True) if session.get("username") == "admin" else render_template("home.html", isAdmin = False)
 
         else:
@@ -204,13 +198,13 @@ def takehome():
         if langaugeTwo:
             session["textLanguage"] = langaugeTwo
             l2 = session.get("textLanguage")
-            takeHomeTranslate(langaugeTwo, text)
-            return render_template("takehome.html", isAdmin = True, l2 = l2) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False, l2 = l2)    
+            translateText(langaugeTwo, text)
+            return render_template("translate.html", isAdmin = True, l2 = l2) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False, l2 = l2)    
         else:
-            return render_template("takehome.html", isAdmin = True, values = False) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False, values = False)    
+            return render_template("translate.html", isAdmin = True, values = False) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False, values = False)    
                  
     else:
-        return render_template("takehome.html", isAdmin = True) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False)
+        return render_template("translate.html", isAdmin = True) if session.get("username") == "admin" else render_template("takehome.html", isAdmin = False)
 
 
 #################################################################
@@ -270,10 +264,10 @@ def verifyPassword(Userpassword, Usercredentials):
     # Hash and Salt the password variables
     if type(Usercredentials) == str:
         salt = stringToBytes(Usercredentials[10:74])
-        key = stringToBytes(Usercredentials[85:149])
+        key  = stringToBytes(Usercredentials[85:149])
     else:
         salt = stringToBytes(Usercredentials["salt"]) 
-        key = stringToBytes(Usercredentials["key"])  
+        key  = stringToBytes(Usercredentials["key"])  
 
     newKey = hashlib.pbkdf2_hmac("sha256", Userpassword.encode("utf-8"), salt, 100000)
     return newKey == key 
@@ -315,7 +309,7 @@ if __name__ == "__main__":
     b.daemon = True
     b.start()
 
-    app.run(host="localhost", port=8080, debug=True)
+    app.run(host="localhost", port = 8080, debug = True)
 
 
 
