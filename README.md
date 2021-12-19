@@ -2,11 +2,10 @@
 A.L.I. was developed as a tool for use in hospitals to help overcome language barriers in the medical environment. It is designed to work in place of a live interpreter who would normally be present for the conversation. A.L.I. is able to not only translate both text and speech as desired, but also provides additional functionality to allow the user to store notes from a conversation for up to 24 hours. Additionally, the user is able to access these notes regardless of location, so long as they are connected to the internet.
 
 ## Installation
-A.L.I requires several installations before it is accessable to the user. The easiest way to do this is to install pip which can be done by running the command:
+A.L.I requires several installations before it is accessable to the user. The easiest way to do this is to install python which allows you to utilize the command 
+``` 
+pip
 ```
-python3 -m pip install --user --upgrade pip
-```
-
 The user must then setup and navigate to a folder the project to be cloned to. You then must setup a local environment to install the proper packages by running:
 ```
 python3 -m pip install --user virtualenv
